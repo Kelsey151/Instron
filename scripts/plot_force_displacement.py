@@ -4,8 +4,13 @@ import os
 
 # === 1. Load your CSV file ===
 
-file_path = "src/bauer_flyx.csv"
-df = pd.read_csv(file_path, skiprows=[1])
+
+current_dir = os.path.dirname(__file__)
+
+file_path = os.path.join(current_dir, "..", "data", "bauer_flyx.csv")
+
+df = pd.read_csv(file_path, skiprows=[1], thousands=",")
+
 file_name = os.path.basename(file_path)      # "bauer_flyx.csv"
 file_name = os.path.splitext(file_name)[0]   # "bauer_flyx"
 
