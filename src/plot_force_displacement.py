@@ -5,22 +5,16 @@ import os
 # === 1. Load your CSV file ===
 
 file_path = "src/bauer_flyx.csv"
-df = pd.read_csv(file_path)
+df = pd.read_csv(file_path, skiprows=[1])
 file_name = os.path.basename(file_path)      # "bauer_flyx.csv"
 file_name = os.path.splitext(file_name)[0]   # "bauer_flyx"
 
-
 df.columns = df.columns.str.strip()
-
-print("Columns:", df.columns)
-
-# === 2. Check columns (optional but good practice) ===
-print("Columns:", df.columns)
 
 # === 3. Extract force and displacement ===
 
-displacement = pd.to_numeric(df["Extension"], errors="coerce")
-force = pd.to_numeric(df["Load"], errors="coerce")
+displacement = pd.to_numeric(df["Extension"].astype(str).str.replace(",", ""), errors="coerce")
+force = pd.to_numeric(df["Load"].astype(str).str.replace(",", ""), errors="coerce")
 
 # === 4. Clean data (remove NaNs) ===
 df_clean = pd.DataFrame({
@@ -34,15 +28,17 @@ df_clean["force"] -= df_clean["force"].iloc[0]
 
 import numpy as np
 
-x = df_clean["displacement"]
-y = df_clean["force"]
+linear_region = df_clean[df_clean["force"] < 800]
+
+x = linear_region["displacement"]
+y = linear_region["force"]
 
 k, b = np.polyfit(x, y, 1)
 
 # === 6. Plot ===
 plt.figure(figsize=(8, 5))
 
-plt.plot(df_clean["displacement"], df_clean["force"], linewidth=2)
+plt.plot(df_clean["displacement"], df_clean["force"], '.', markersize=2)
 
 plt.xlabel("Displacement (mm)")
 plt.ylabel("Force (N)")
