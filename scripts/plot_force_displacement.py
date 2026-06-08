@@ -6,12 +6,13 @@ import os
 
 current_dir = os.path.dirname(__file__)
 
-file_path = os.path.join(current_dir, "..", "data", "bauer_flyx.csv")
+# Change file name to match your raw data file in the "data" folder
+file_path = os.path.join(current_dir, "..", "data", "taco_test_000.csv")
 
-df = pd.read_csv(file_path, skiprows=[1], thousands=",")
+df = pd.read_csv(file_path, thousands=",")
 
-file_name = os.path.basename(file_path)      # "bauer_flyx.csv"
-file_name = os.path.splitext(file_name)[0]   # "bauer_flyx"
+file_name = os.path.basename(file_path)
+file_name = os.path.splitext(file_name)[0]
 
 df.columns = df.columns.str.strip()
 
@@ -29,6 +30,10 @@ df_clean = pd.DataFrame({
 # === 5. Zero the data (important for Instron tests) ===
 df_clean["displacement"] -= df_clean["displacement"].iloc[0]
 df_clean["force"] -= df_clean["force"].iloc[0]
+
+# === 5.5 Trim data after failure (keep only up to UTS) ===
+failure_cutoff_index = df_clean["force"].idxmax()
+df_clean = df_clean.loc[:failure_cutoff_index].copy().reset_index(drop=True)
 
 import numpy as np
 
@@ -131,10 +136,3 @@ plt.savefig(f"results/{file_name}_force_displacement.png", dpi=300)
 
 plt.tight_layout()
 plt.show()
-
-import numpy as np
-
-x = df_clean["displacement"]
-y = df_clean["force"]
-
-k, b = np.polyfit(x, y, 1)
