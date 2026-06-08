@@ -7,7 +7,7 @@ import os
 current_dir = os.path.dirname(__file__)
 
 # Change file name to match your raw data file in the "data" folder
-file_path = os.path.join(current_dir, "..", "data", "Specimen_RawData_2.csv")
+file_path = os.path.join(current_dir, "..", "data", "taco_test_000.csv")
 
 df = pd.read_csv(file_path, thousands=",")
 
@@ -31,62 +31,30 @@ df_clean = pd.DataFrame({
 df_clean["displacement"] -= df_clean["displacement"].iloc[0]
 df_clean["force"] -= df_clean["force"].iloc[0]
 
-# === Split into loading and unloading branches ===
-peak_idx = df_clean["force"].idxmax()
-
-loading = df_clean.loc[:peak_idx].copy().reset_index(drop=True)
-unloading = df_clean.loc[peak_idx:].copy().reset_index(drop=True)
+# === 5.5 Trim data after failure (keep only up to UTS) ===
+failure_cutoff_index = df_clean["force"].idxmax()
+df_clean = df_clean.loc[:failure_cutoff_index].copy().reset_index(drop=True)
 
 import numpy as np
 
-# === Loading stiffness ===
-# Use lower-force portion of loading branch
-loading_linear = loading[loading["force"] < 0.4 * loading["force"].max()]
+linear_region = df_clean[df_clean["force"] < 800]
 
-x_load = loading_linear["displacement"]
-y_load = loading_linear["force"]
+x = linear_region["displacement"]
+y = linear_region["force"]
 
-k_load, b_load = np.polyfit(x_load, y_load, 1)
+k, b = np.polyfit(x, y, 1)
 
-# === Unloading stiffness ===
-# Use upper-force portion of unloading branch
-unloading_linear = unloading[unloading["force"] > 0.6 * unloading["force"].max()]
+# === 6. Calculate UTS (max force) ===
+uts_force = df_clean["force"].max()
 
-x_unload = unloading_linear["displacement"]
-y_unload = unloading_linear["force"]
-
-k_unload, b_unload = np.polyfit(x_unload, y_unload, 1)
-
-# Use absolute value so unloading stiffness displays as positive
-k_unload = abs(k_unload)
-
-# === Calculate UTS (max force) ===
-uts_force = loading["force"].max()
-
-uts_index = loading["force"].idxmax()
-uts_displacement = loading.loc[uts_index, "displacement"]
+# Get displacement at UTS
+uts_index = df_clean["force"].idxmax()
+uts_displacement = df_clean.loc[uts_index, "displacement"]
 
 # === 6. Plot ===
 plt.figure(figsize=(8, 5))
 
-plt.plot(
-    loading["displacement"],
-    loading["force"],
-    '-',
-    linewidth=2,
-    color='tab:blue',
-    label="Loading"
-)
-
-plt.plot(
-    unloading["displacement"],
-    unloading["force"],
-    '-',
-    linewidth=2,
-    color='tab:orange',
-    label="Unloading"
-)
-
+plt.plot(df_clean["displacement"], df_clean["force"], '.', markersize=2)
 
 plt.xlabel("Displacement (mm)")
 plt.ylabel("Force (N)")
@@ -96,12 +64,23 @@ plt.grid()
 # Mark UTS
 plt.plot(uts_displacement, uts_force, 'ro')
 
+# Position (top-left)
 x_pos = 0.05
 y_start = 0.88
 line_spacing = 0.06
 
+# Stiffness (black)
 plt.text(
     x_pos, y_start,
+    f"k ≈ {k:.2f} N/mm",
+    transform=plt.gca().transAxes,
+    color='black',
+    verticalalignment='top'
+)
+
+# UTS (red)
+plt.text(
+    x_pos, y_start - 1 * line_spacing,
     f"UTS ≈ {uts_force:.0f} N",
     transform=plt.gca().transAxes,
     color='red',

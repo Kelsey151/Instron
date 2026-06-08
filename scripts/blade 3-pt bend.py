@@ -7,7 +7,7 @@ import os
 current_dir = os.path.dirname(__file__)
 
 # Change file name to match your raw data file in the "data" folder
-file_path = os.path.join(current_dir, "..", "data", "Specimen_RawData_1.csv")
+file_path = os.path.join(current_dir, "..", "data", "ccm_xs1pro.csv")
 
 df = pd.read_csv(file_path, thousands=",")
 
@@ -31,10 +31,6 @@ df_clean = pd.DataFrame({
 df_clean["displacement"] -= df_clean["displacement"].iloc[0]
 df_clean["force"] -= df_clean["force"].iloc[0]
 
-# === 5.5 Trim data after failure (keep only up to UTS) ===
-# failure_cutoff_index = df_clean["force"].idxmax()
-# df_clean = df_clean.loc[:failure_cutoff_index].copy().reset_index(drop=True)
-
 import numpy as np
 
 linear_region = df_clean[df_clean["force"] < 800]
@@ -43,7 +39,6 @@ x = linear_region["displacement"]
 y = linear_region["force"]
 
 k, b = np.polyfit(x, y, 1)
-
 
 # === 6. Calculate UTS (max force) ===
 uts_force = df_clean["force"].max()
@@ -85,7 +80,6 @@ else:
     yield_force = df_clean.loc[yield_index, "force"]
     yield_displacement = df_clean.loc[yield_index, "displacement"]
 
-
 # === 6. Plot ===
 plt.figure(figsize=(8, 5))
 
@@ -109,7 +103,6 @@ if yield_force is not None and yield_displacement is not None:
 
 #plt.text(yield_displacement, yield_force, f" Yield\n({yield_force:.0f} N)", color='green')
 
-
 # Position (top-left)
 x_pos = 0.05
 y_start = 0.88
@@ -123,7 +116,6 @@ plt.text(
     color='black',
     verticalalignment='top'
 )
-
 
 # Yield (green)
 if yield_force is not None:
@@ -143,7 +135,6 @@ else:
         verticalalignment='top'
     )
 
-
 # UTS (red)
 plt.text(
     x_pos, y_start - 2 * line_spacing,
@@ -152,7 +143,6 @@ plt.text(
     color='red',
     verticalalignment='top'
 )
-
 
 plt.savefig(f"results/{file_name}_force_displacement.png", dpi=300)
 
