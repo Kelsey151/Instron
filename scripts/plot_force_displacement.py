@@ -7,7 +7,7 @@ import os
 current_dir = os.path.dirname(__file__)
 
 # Change file name to match your raw data file in the "data" folder
-file_path = os.path.join(current_dir, "..", "data", "taco_test_000.csv")
+file_path = os.path.join(current_dir, "..", "data", "Specimen_RawData_1.csv")
 
 df = pd.read_csv(file_path, thousands=",")
 
@@ -32,8 +32,8 @@ df_clean["displacement"] -= df_clean["displacement"].iloc[0]
 df_clean["force"] -= df_clean["force"].iloc[0]
 
 # === 5.5 Trim data after failure (keep only up to UTS) ===
-failure_cutoff_index = df_clean["force"].idxmax()
-df_clean = df_clean.loc[:failure_cutoff_index].copy().reset_index(drop=True)
+# failure_cutoff_index = df_clean["force"].idxmax()
+# df_clean = df_clean.loc[:failure_cutoff_index].copy().reset_index(drop=True)
 
 import numpy as np
 
@@ -73,10 +73,18 @@ deviation = abs(df_clean["force"] - predicted_force)
 threshold = 50  # N deviation
 
 # Find first point where deviation exceeds threshold
-yield_index = deviation[deviation > threshold].index[0]
 
-yield_force = df_clean.loc[yield_index, "force"]
-yield_displacement = df_clean.loc[yield_index, "displacement"]
+yield_candidates = deviation[deviation > threshold]
+
+if len(yield_candidates) == 0:
+    print("No yield point found with the current threshold.")
+    yield_force = None
+    yield_displacement = None
+else:
+    yield_index = yield_candidates.index[0]
+    yield_force = df_clean.loc[yield_index, "force"]
+    yield_displacement = df_clean.loc[yield_index, "displacement"]
+
 
 # === 6. Plot ===
 plt.figure(figsize=(8, 5))
@@ -94,8 +102,11 @@ plt.grid()
 plt.plot(uts_displacement, uts_force, 'ro')
 #plt.text(uts_displacement, uts_force, f" UTS\n({uts_force:.0f} N)", color='red')
 
-# Mark Yield Point
-plt.plot(yield_displacement, yield_force, 'go')
+
+# Mark Yield Point only if it exists
+if yield_force is not None and yield_displacement is not None:
+    plt.plot(yield_displacement, yield_force, 'go')
+
 #plt.text(yield_displacement, yield_force, f" Yield\n({yield_force:.0f} N)", color='green')
 
 
@@ -113,14 +124,25 @@ plt.text(
     verticalalignment='top'
 )
 
+
 # Yield (green)
-plt.text(
-    x_pos, y_start - line_spacing,
-    f"Yield ≈ {yield_force:.0f} N",
-    transform=plt.gca().transAxes,
-    color='green',
-    verticalalignment='top'
-)
+if yield_force is not None:
+    plt.text(
+        x_pos, y_start - line_spacing,
+        f"Yield ≈ {yield_force:.0f} N",
+        transform=plt.gca().transAxes,
+        color='green',
+        verticalalignment='top'
+    )
+else:
+    plt.text(
+        x_pos, y_start - line_spacing,
+        "Yield not found",
+        transform=plt.gca().transAxes,
+        color='green',
+        verticalalignment='top'
+    )
+
 
 # UTS (red)
 plt.text(
