@@ -46,7 +46,7 @@ def load_instron_csv(file_path):
 current_dir = os.path.dirname(__file__)
 
 # Change file path to match your raw data file in the "data" folder
-file_path = os.path.join(current_dir, "..", "data", "charmin", "w26_rawShell.csv")
+file_path = os.path.join(current_dir, "..", "data", "charmin", "pp2_black_R.csv")
 df = load_instron_csv(file_path)
 
 file_name = os.path.basename(file_path)
