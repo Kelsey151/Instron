@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
  
+
 def load_instron_csv(file_path):
     """
     Load an Instron CSV even if there is garbage/metadata above the real header.
@@ -46,7 +47,8 @@ def load_instron_csv(file_path):
 current_dir = os.path.dirname(__file__)
 
 # Change file path to match your raw data file in the "data" folder
-file_path = os.path.join(current_dir, "..", "data", "charmin", "w26_rawShell.csv")
+file_path = os.path.join(current_dir, "..", "data", "holder_3pt_bend", "WSR8002_july25_lateral.csv")
+
 df = load_instron_csv(file_path)
 
 file_name = os.path.basename(file_path)
@@ -168,5 +170,5 @@ plt.text(
 plt.legend()
 plt.tight_layout()
 
-plt.savefig(f"results/charmin/{file_name}_force_displacement.png", dpi=300)
+plt.savefig(f"results/holder_3pt_bend/{file_name}_force_displacement.png", dpi=300)
 plt.show()

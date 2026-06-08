@@ -1,20 +1,57 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import numpy as np
  
+def load_instron_csv(file_path):
+    """
+    Load an Instron CSV even if there is garbage/metadata above the real header.
+    Looks for the row containing 'Extension' and 'Load', then reads from there.
+    """
+
+    with open(file_path, "r", encoding="utf-8-sig") as f:
+        lines = f.readlines()
+
+    header_row = None
+    for i, line in enumerate(lines):
+        line_lower = line.lower()
+        if "extension" in line_lower and "load" in line_lower:
+            header_row = i
+            break
+
+    if header_row is None:
+        raise ValueError("Could not find a header row containing 'Extension' and 'Load'.")
+
+    # Read starting from the detected header row
+    df = pd.read_csv(file_path, skiprows=header_row, thousands=",")
+
+    # Clean column names
+    df.columns = df.columns.str.strip()
+
+    # Drop unnamed/empty columns if they exist
+    df = df.loc[:, ~df.columns.str.contains("^Unnamed", na=False)]
+
+    # If the first data row is actually the units row, drop it
+    if len(df) > 0:
+        first_ext = str(df.iloc[0]["Extension"]).strip() if "Extension" in df.columns else ""
+        first_load = str(df.iloc[0]["Load"]).strip() if "Load" in df.columns else ""
+
+        if first_ext.startswith("(") or first_load.startswith("("):
+            df = df.iloc[1:].reset_index(drop=True)
+
+    return df
+
 # === 1. Load your CSV file ===
 
 current_dir = os.path.dirname(__file__)
 
 # Change file name to match your raw data file in the "data" folder
-file_path = os.path.join(current_dir, "..", "data", "ccm_xs1pro.csv")
+file_path = os.path.join(current_dir, "..", "data","blade_3pt_bend", "ccm_xs1pro.csv")
 
-df = pd.read_csv(file_path, thousands=",")
+df = load_instron_csv(file_path)
 
 file_name = os.path.basename(file_path)
 file_name = os.path.splitext(file_name)[0]
-
-df.columns = df.columns.str.strip()
 
 # === 3. Extract force and displacement ===
 
@@ -30,8 +67,6 @@ df_clean = pd.DataFrame({
 # === 5. Zero the data (important for Instron tests) ===
 df_clean["displacement"] -= df_clean["displacement"].iloc[0]
 df_clean["force"] -= df_clean["force"].iloc[0]
-
-import numpy as np
 
 linear_region = df_clean[df_clean["force"] < 800]
 
@@ -90,18 +125,12 @@ plt.ylabel("Force (N)")
 plt.title(f"Force vs Displacement of {file_name}")
 plt.grid()
 
-#plt.text(0.05, 0.9, f"k ≈ {k:.2f} N/mm", transform=plt.gca().transAxes)
-
 # Mark UTS
 plt.plot(uts_displacement, uts_force, 'ro')
-#plt.text(uts_displacement, uts_force, f" UTS\n({uts_force:.0f} N)", color='red')
-
 
 # Mark Yield Point only if it exists
 if yield_force is not None and yield_displacement is not None:
     plt.plot(yield_displacement, yield_force, 'go')
-
-#plt.text(yield_displacement, yield_force, f" Yield\n({yield_force:.0f} N)", color='green')
 
 # Position (top-left)
 x_pos = 0.05
@@ -144,7 +173,7 @@ plt.text(
     verticalalignment='top'
 )
 
-plt.savefig(f"results/{file_name}_force_displacement.png", dpi=300)
+plt.savefig(f"results/blade_3pt_bend/{file_name}_force_displacement.png", dpi=300)
 
 plt.tight_layout()
 plt.show()
