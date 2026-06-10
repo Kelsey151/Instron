@@ -46,7 +46,7 @@ def load_instron_csv(file_path):
 current_dir = os.path.dirname(__file__)
 
 # Change file name to match your raw data file in the "data" folder
-file_path = os.path.join(current_dir, "..", "data", "taco", "taco_test_000.csv")
+file_path = os.path.join(current_dir, "..", "data", "taco", "taco_test_008.csv")
 
 df = load_instron_csv(file_path)
 

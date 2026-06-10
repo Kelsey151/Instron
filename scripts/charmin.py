@@ -46,7 +46,7 @@ def load_instron_csv(file_path):
 current_dir = os.path.dirname(__file__)
 
 # Change file path to match your raw data file in the "data" folder
-file_path = os.path.join(current_dir, "..", "data", "charmin", "unprocessed", "W27_PA_White.is_ccyclic_RawData", "Specimen_RawData_2.csv")
+file_path = os.path.join(current_dir, "..", "data", "charmin", "white_day0.csv")
 df = load_instron_csv(file_path)
 
 file_name = os.path.basename(file_path)
@@ -168,5 +168,5 @@ plt.text(
 plt.legend()
 plt.tight_layout()
 
-plt.savefig(f"results/charmin/W27_PA_White/{file_name}_force_displacement.png", dpi=300)
+plt.savefig(f"results/charmin/white_mormon/{file_name}_force_displacement.png", dpi=300)
 plt.show()
